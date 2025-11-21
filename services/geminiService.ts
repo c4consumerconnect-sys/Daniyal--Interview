@@ -3,9 +3,10 @@ import { CVAnalysis, CVInput } from '../types';
 import { createPcmBlob, decodeBase64, decodeAudioData } from '../utils/audioUtils';
 
 // Safely access API key to prevent "process is not defined" crashes in browser environments
+// Checks both API_KEY and GEMINI_API_KEY to support various naming conventions
 let apiKey = '';
 try {
-  apiKey = process.env.API_KEY || '';
+  apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
 } catch (e) {
   console.warn("API_KEY not found in process.env. If using Vite/Vercel, ensure define: { 'process.env.API_KEY': ... } is configured or use VITE_ prefix logic if applicable.");
 }
@@ -16,7 +17,7 @@ const ai = new GoogleGenAI({ apiKey });
 
 export const analyzeCV = async (input: CVInput): Promise<CVAnalysis> => {
   if (!apiKey) {
-    throw new Error("API Key is missing. Please configure process.env.API_KEY in your deployment settings.");
+    throw new Error("API Key is missing. Please configure process.env.API_KEY or GEMINI_API_KEY in your deployment settings.");
   }
 
   try {
