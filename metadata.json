@@ -1,0 +1,7 @@
+{
+  "name": "Copy of TalentScout AI",
+  "description": "An intelligent interview platform that conducts real-time audio interviews based on your CV.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
