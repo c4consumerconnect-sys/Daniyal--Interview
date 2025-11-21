@@ -1,13 +1,24 @@
 import { GoogleGenAI, Type, LiveServerMessage, Modality } from '@google/genai';
 import { CVAnalysis, CVInput } from '../types';
-import { createPcmBlob, decodeBase64, decodeAudioData, resampleTo16k } from '../utils/audioUtils';
+import { createPcmBlob, decodeBase64, decodeAudioData } from '../utils/audioUtils';
 
-const apiKey = process.env.API_KEY || '';
+// Safely access API key to prevent "process is not defined" crashes in browser environments
+let apiKey = '';
+try {
+  apiKey = process.env.API_KEY || '';
+} catch (e) {
+  console.warn("API_KEY not found in process.env. If using Vite/Vercel, ensure define: { 'process.env.API_KEY': ... } is configured or use VITE_ prefix logic if applicable.");
+}
+
 const ai = new GoogleGenAI({ apiKey });
 
 // --- CV Analysis ---
 
 export const analyzeCV = async (input: CVInput): Promise<CVAnalysis> => {
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please configure process.env.API_KEY in your deployment settings.");
+  }
+
   try {
     const modelId = 'gemini-2.5-flash';
     let requestContents;
@@ -62,7 +73,7 @@ export const analyzeCV = async (input: CVInput): Promise<CVAnalysis> => {
     return result as CVAnalysis;
   } catch (error) {
     console.error("Error analyzing CV:", error);
-    throw new Error("Failed to analyze CV content.");
+    throw new Error("Failed to analyze CV content. " + (error instanceof Error ? error.message : ""));
   }
 };
 
@@ -85,6 +96,11 @@ export class InterviewSession {
 
   async start() {
     if (this.active) return;
+    if (!apiKey) {
+       if (this.onError) this.onError("API Key is missing. Check Vercel Environment Variables.");
+       return;
+    }
+    
     this.active = true;
 
     try {
@@ -129,6 +145,10 @@ export class InterviewSession {
         callbacks: {
           onopen: () => {
             console.log("Interview connection established");
+            // Send initial trigger for the model to introduce itself
+            sessionPromise.then(session => {
+               session.send("Hello, I am ready for the interview.");
+            });
             this.startAudioStreaming(stream, sessionPromise);
           },
           onmessage: async (message: LiveServerMessage) => {

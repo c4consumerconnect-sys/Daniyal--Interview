@@ -29,9 +29,13 @@ const App: React.FC = () => {
       const result = await analyzeCV(input);
       setAnalysis(result);
       setAppState(AppState.READY);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setErrorMsg("Failed to analyze CV. Please ensure the file is a valid PDF or Text.");
+      let message = "Failed to analyze CV. Please ensure the file is a valid PDF or Text.";
+      if (err.message && err.message.includes("API Key")) {
+        message = "Configuration Error: API Key is missing. Please check your Vercel Environment Variables.";
+      }
+      setErrorMsg(message);
       setAppState(AppState.IDLE);
     }
   };
@@ -101,8 +105,8 @@ const App: React.FC = () => {
       <main className="flex-1 relative z-10 container mx-auto px-4 flex flex-col items-center justify-center pb-10">
         
         {errorMsg && (
-           <div className="absolute top-24 bg-red-500/10 border border-red-500/50 text-red-200 px-6 py-3 rounded-lg backdrop-blur-md animate-fade-in">
-             {errorMsg}
+           <div className="absolute top-24 z-50 bg-red-500/10 border border-red-500/50 text-red-200 px-6 py-3 rounded-lg backdrop-blur-md animate-fade-in max-w-lg text-center shadow-lg">
+             <p className="font-medium">{errorMsg}</p>
            </div>
         )}
 
